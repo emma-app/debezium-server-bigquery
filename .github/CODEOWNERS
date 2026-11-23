@@ -1,0 +1,4 @@
+# master builds the Debezium Server image that streams Emma's production MySQL
+# into BigQuery, and publish-emma-image.yml pushes it with a registry
+# credential, so every path needs an owner's review.
+* @antonio0 @edo1493
