@@ -33,7 +33,7 @@ jobs:
     steps:
       - name: Check the image tag
         run: |
-          if [[ ! "$IMAGE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ || "$IMAGE_TAG" == latest || "$IMAGE_TAG" == sha-* ]]; then
+          if [[ ! "$IMAGE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ || "$IMAGE_TAG" == latest ]]; then
             echo "Invalid image tag: $IMAGE_TAG" >&2
             exit 1
           fi
@@ -107,9 +107,9 @@ jobs:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
           printf '%s' "$ACCESS_TOKEN" | docker login --username oauth2accesstoken --password-stdin "${REGISTRY%%/*}"
-          for tag in "$IMAGE_TAG" "sha-${GITHUB_SHA::12}"; do
-            docker image tag "$IMAGE_NAME:$IMAGE_TAG" "$REGISTRY/$IMAGE_NAME:$tag"
-            docker image push "$REGISTRY/$IMAGE_NAME:$tag"
-          done
+          # One tag per build: a rebuild of the same commit (for a base image fix)
+          # gets a new image_tag, and the commit is in the revision label.
+          docker image tag "$IMAGE_NAME:$IMAGE_TAG" "$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
+          docker image push "$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
           digest=$(docker image inspect "$REGISTRY/$IMAGE_NAME:$IMAGE_TAG" --format '{{index .RepoDigests 0}}')
           echo "Published $REGISTRY/$IMAGE_NAME:$IMAGE_TAG as $digest" | tee -a "$GITHUB_STEP_SUMMARY"
